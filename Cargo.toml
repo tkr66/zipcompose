@@ -1,0 +1,16 @@
+[package]
+name = "zipcompose"
+version = "0.1.0"
+edition = "2021"
+description = "reads a yaml file to create zip archives based on defined entries"
+homepage = "https://github.com/tkr66/zipcompose"
+repository = "https://github.com/tkr66/zipcompose"
+license = "MIT"
+readme = "README.md"
+keywords = ["zip", "util"]
+
+[dependencies]
+clap = { version = "4.5.16", features = ["derive"] }
+serde = "1.0"
+serde_yml = "0.0.11"
+zip = "2.2.0"
