@@ -1,7 +1,7 @@
 use std::{
     fs::{self},
     io::Write,
-    path::{Path, PathBuf},
+    path::Path,
 };
 
 use zip::write::SimpleFileOptions;
@@ -64,14 +64,17 @@ pub fn run(manifest: &Manifest, name: &str) -> Result<(), std::io::Error> {
         let file_option = SimpleFileOptions::default()
             .compression_method(zip::CompressionMethod::Stored)
             .unix_permissions(0o644);
-        let root_in_zip = PathBuf::from(&e.dest_dir);
+        let mut root_in_entries = Path::new(&e.dest_dir);
+        if root_in_entries.starts_with("./") {
+            root_in_entries = root_in_entries.strip_prefix("./").unwrap();
+        }
         for f in &e.files {
             match f {
                 FileMapping::Source(s) => {
                     let filename = Path::new(s)
                         .file_name()
                         .expect("The filename must not be null");
-                    let file_in_zip = root_in_zip.join(filename);
+                    let file_in_zip = root_in_entries.join(filename);
                     let valid_path = file_in_zip.to_str().expect("Invalid utf8 string");
                     zip.start_file(valid_path, file_option)?;
                     let content = fs::read(s.as_str())?;
@@ -81,7 +84,7 @@ pub fn run(manifest: &Manifest, name: &str) -> Result<(), std::io::Error> {
                     let filename = Path::new(dest)
                         .file_name()
                         .expect("The filename must not be null");
-                    let file_in_zip = root_in_zip.join(filename);
+                    let file_in_zip = root_in_entries.join(filename);
                     let valid_path = file_in_zip.to_str().expect("Invalid utf8 string");
                     zip.start_file(valid_path, file_option)?;
                     let content = fs::read(src.as_str())?;
