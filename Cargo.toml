@@ -1,8 +1,8 @@
 [package]
 name = "zipcompose"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
-description = "reads a yaml file to create zip archives based on defined entries"
+description = "YAML-based zip runner"
 homepage = "https://github.com/tkr66/zipcompose"
 repository = "https://github.com/tkr66/zipcompose"
 license = "MIT"
