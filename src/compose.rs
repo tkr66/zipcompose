@@ -37,7 +37,17 @@ pub fn check(manifest: &Manifest, name: &str) -> Result<(), std::io::Error> {
                         ));
                     }
                 }
-                FileMapping::Glob(_) => todo!(),
+                FileMapping::Glob(pat) => {
+                    for entry in glob::glob(pat.as_str()).expect("Failed to read glob pattern") {
+                        let e = entry.expect("A GlobError occured");
+                        if !e.exists() {
+                            return Err(std::io::Error::new(
+                                std::io::ErrorKind::NotFound,
+                                "The source does not exist",
+                            ));
+                        };
+                    }
+                }
             }
         }
     }
@@ -91,7 +101,16 @@ pub fn run(manifest: &Manifest, name: &str) -> Result<(), std::io::Error> {
                     let content = fs::read(src.as_str())?;
                     zip.write_all(&content)?;
                 }
-                FileMapping::Glob(_) => todo!(),
+                FileMapping::Glob(pat) => {
+                    for entry in glob::glob(pat.as_str()).expect("Failed to read glob pattern") {
+                        let e = entry.expect("A GlobError occured");
+                        let file_in_zip = root_in_entries.join(e.file_name().unwrap());
+                        let valid_path = file_in_zip.to_str().expect("Invalid utf8 string");
+                        zip.start_file(valid_path, file_option)?;
+                        let content = fs::read(&e)?;
+                        zip.write_all(&content)?;
+                    }
+                }
             }
         }
     }
