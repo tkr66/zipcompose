@@ -37,6 +37,7 @@ pub fn check(manifest: &Manifest, name: &str) -> Result<(), std::io::Error> {
                         ));
                     }
                 }
+                FileMapping::Glob(_) => todo!(),
             }
         }
     }
@@ -90,6 +91,7 @@ pub fn run(manifest: &Manifest, name: &str) -> Result<(), std::io::Error> {
                     let content = fs::read(src.as_str())?;
                     zip.write_all(&content)?;
                 }
+                FileMapping::Glob(_) => todo!(),
             }
         }
     }

@@ -1,3 +1,4 @@
+use serde::de::Deserializer;
 use serde::Deserialize;
 use std::{collections::HashMap, fs::File, io::BufReader, path::Path};
 
@@ -18,11 +19,40 @@ pub struct FilesWithDestination {
     pub files: Vec<FileMapping>,
 }
 
-#[derive(Deserialize, PartialEq, Debug)]
+// Helper enum for deserialization
+#[derive(Deserialize)]
 #[serde(untagged)]
+enum FileMappingInput {
+    Simple(String),
+    Detailed { src: String, dest: String },
+}
+
+#[derive(PartialEq, Debug)]
 pub enum FileMapping {
     Source(String),
     SourceWithDestination { src: String, dest: String },
+    Glob(String),
+}
+
+impl<'de> Deserialize<'de> for FileMapping {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let input = FileMappingInput::deserialize(deserializer)?;
+        match input {
+            FileMappingInput::Simple(s) => {
+                if s.contains('*') {
+                    Ok(FileMapping::Glob(s))
+                } else {
+                    Ok(FileMapping::Source(s))
+                }
+            }
+            FileMappingInput::Detailed { src, dest } => {
+                Ok(FileMapping::SourceWithDestination { src, dest })
+            }
+        }
+    }
 }
 
 pub fn read(path: &Path) -> Result<Manifest, std::io::Error> {
@@ -40,14 +70,15 @@ fn deserialize_files_with_destination() {
         files:
             - main.rs
             - src: main.rs
-              dest: renamed_main.rs
-            - lib.rs
+              dest: renamed_main.rs # Source with destination
+            - lib.rs # Simple source
             - src: lib.rs
-              dest: renamed_lib.rs
+              dest: renamed_lib.rs # Source with destination
+            - src/*.rs
         ";
     let t: FilesWithDestination = serde_yml::from_str(yaml).unwrap();
     assert_eq!(t.dest_dir, ".");
-    assert_eq!(t.files.len(), 4);
+    assert_eq!(t.files.len(), 5);
     assert_eq!(t.files[0], FileMapping::Source("main.rs".to_string()));
     assert_eq!(
         t.files[1],
@@ -64,6 +95,7 @@ fn deserialize_files_with_destination() {
             dest: "renamed_lib.rs".to_string()
         }
     );
+    assert_eq!(t.files[4], FileMapping::Glob("src/*.rs".to_string()));
 }
 
 #[test]
